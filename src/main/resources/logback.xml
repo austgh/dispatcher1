@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+	<property name="service" value="dispater"/>
+	<property name="logPath" value="/home/wasadmin/logs/dispater/"/>
+	<property name="logPattern" value="[%d{yyyy-MM-dd HH:mm:ss.SSS}][%t]%-5p[%c][%m]%n" />
+    <contextName>${service}</contextName>
+    
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>${logPattern}</pattern>
+		</encoder>
+	</appender>
+	
+	<appender name="info_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${logPath}${service}-info.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${logPath}${service}-info.%d{yyyy-MM-dd}.%i.zip</fileNamePattern>
+			<maxHistory>30</maxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>100MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>${logPattern}</pattern>
+		</encoder>
+	</appender>
+	
+	<appender name="warn_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+ 		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>WARN</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter> 
+		<file>${logPath}${service}-warn.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${logPath}${service}-warn.%d{yyyy-MM-dd}.%i.zip</fileNamePattern>
+			<maxHistory>30</maxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>100MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>${logPattern}</pattern>
+		</encoder>
+	</appender>
+	
+	<appender name="error_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+ 		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>ERROR</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter> 
+		<file>${logPath}${service}-error.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${logPath}${service}-error.%d{yyyy-MM-dd}.%i.zip</fileNamePattern>
+			<maxHistory>30</maxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>100MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>${logPattern}</pattern>
+		</encoder>
+	</appender>
+	
+    <!--  此节点用来设置一个包或具体的某一个类的日志打印级别 -->
+<!-- 	<logger name="qccInfo" level="debug"/> -->
+<!-- 	<logger name="com.austgh.mapper.UserMapper" level="debug"/> -->
+
+	<root level="info">
+		<appender-ref ref="console" />
+		<appender-ref ref="info_file" />
+		<appender-ref ref="warn_file" />
+		<appender-ref ref="error_file" />
+	</root>
+</configuration>
