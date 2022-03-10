@@ -16,6 +16,36 @@ public class ReqBody {
 	private String lglPsnNm;	//serviceId
 	@JacksonXmlProperty(localName = "LglPsnIdentNo")
 	private String lglPsnIdentNo;	//serviceId
+	@JacksonXmlProperty(localName = "AprvLmt")
+	private String aprvLmt;	//serviceId
+	@JacksonXmlProperty(localName = "AplCrBal")
+	private String aplCrBal;	//serviceId
+	@JacksonXmlProperty(localName = "ProTyp")
+	private String proTyp;	//serviceId
+
+	public String getProTyp() {
+		return proTyp;
+	}
+
+	public void setProTyp(String proTyp) {
+		this.proTyp = proTyp;
+	}
+
+	public String getAplCrBal() {
+		return aplCrBal;
+	}
+
+	public void setAplCrBal(String aplCrBal) {
+		this.aplCrBal = aplCrBal;
+	}
+
+	public String getAprvLmt() {
+		return aprvLmt;
+	}
+
+	public void setAprvLmt(String aprvLmt) {
+		this.aprvLmt = aprvLmt;
+	}
 
 	@JacksonXmlProperty(localName = "PartBkCd")
 	private String partBkCd;
@@ -23,26 +53,27 @@ public class ReqBody {
 	public String getPartBkCd() {
 		return partBkCd;
 	}
+	@JacksonXmlProperty(localName = "ZoneCd")
 	private String zoneCd;
+	@JacksonXmlProperty(localName = "SmlEntpHighCusFlg")
+	private String smlEntpHighCusFlg;
+	@JacksonXmlProperty(localName = "SmlGntClbMbrFlg")
+	private String smlGntClbMbrFlg;
 
-	@Override
-	public String toString() {
-		return "ReqBody{" +
-				"userid='" + userid + '\'' +
-				", entname='" + entname + '\'' +
-				", lglPsnNm='" + lglPsnNm + '\'' +
-				", lglPsnIdentNo='" + lglPsnIdentNo + '\'' +
-				", partBkCd='" + partBkCd + '\'' +
-				", zoneCd='" + zoneCd + '\'' +
-				", legalname='" + legalname + '\'' +
-				", legalidno='" + legalidno + '\'' +
-				", serviceId='" + serviceId + '\'' +
-				", entpNm='" + entpNm + '\'' +
-				", aplFlwNo='" + aplFlwNo + '\'' +
-				", chanlNo='" + chanlNo + '\'' +
-				", uvslSocCrCd='" + uvslSocCrCd + '\'' +
-				", cltGdsInfList=" + cltGdsInfList +
-				'}';
+	public String getSmlEntpHighCusFlg() {
+		return smlEntpHighCusFlg;
+	}
+
+	public void setSmlEntpHighCusFlg(String smlEntpHighCusFlg) {
+		this.smlEntpHighCusFlg = smlEntpHighCusFlg;
+	}
+
+	public String getSmlGntClbMbrFlg() {
+		return smlGntClbMbrFlg;
+	}
+
+	public void setSmlGntClbMbrFlg(String smlGntClbMbrFlg) {
+		this.smlGntClbMbrFlg = smlGntClbMbrFlg;
 	}
 
 	public String getZoneCd() {
@@ -116,6 +147,16 @@ public class ReqBody {
 
 	@JacksonXmlProperty(localName = "AplFlwNo")
 	private String aplFlwNo;//流水号
+	@JacksonXmlProperty(localName = "LoanFlwNo")
+	private String loanFlwNo;//流水号
+
+	public String getLoanFlwNo() {
+		return loanFlwNo;
+	}
+
+	public void setLoanFlwNo(String loanFlwNo) {
+		this.loanFlwNo = loanFlwNo;
+	}
 
 	@JacksonXmlProperty(localName = "ChanlNo")
 	private String chanlNo;		//渠道号
@@ -174,4 +215,41 @@ public class ReqBody {
 		this.userid = userid;
 	}
 
+	private List<RsplPrsnInfo> rsplPrsnInfoList;
+	@JacksonXmlElementWrapper(localName ="array")
+	@JacksonXmlProperty(localName ="RsplPrsnInfo")
+	public List<RsplPrsnInfo> getRsplPrsnInfoList() {
+		return rsplPrsnInfoList;
+	}
+
+	public void setRsplPrsnInfoList(List<RsplPrsnInfo> rsplPrsnInfoList) {
+		this.rsplPrsnInfoList = rsplPrsnInfoList;
+	}
+
+	@Override
+	public String toString() {
+		return "ReqBody{" +
+				"userid='" + userid + '\'' +
+				", entname='" + entname + '\'' +
+				", lglPsnNm='" + lglPsnNm + '\'' +
+				", lglPsnIdentNo='" + lglPsnIdentNo + '\'' +
+				", aprvLmt='" + aprvLmt + '\'' +
+				", aplCrBal='" + aplCrBal + '\'' +
+				", proTyp='" + proTyp + '\'' +
+				", partBkCd='" + partBkCd + '\'' +
+				", zoneCd='" + zoneCd + '\'' +
+				", smlEntpHighCusFlg='" + smlEntpHighCusFlg + '\'' +
+				", smlGntClbMbrFlg='" + smlGntClbMbrFlg + '\'' +
+				", legalname='" + legalname + '\'' +
+				", legalidno='" + legalidno + '\'' +
+				", serviceId='" + serviceId + '\'' +
+				", entpNm='" + entpNm + '\'' +
+				", aplFlwNo='" + aplFlwNo + '\'' +
+				", loanFlwNo='" + loanFlwNo + '\'' +
+				", chanlNo='" + chanlNo + '\'' +
+				", uvslSocCrCd='" + uvslSocCrCd + '\'' +
+				", cltGdsInfList=" + cltGdsInfList +
+				", rsplPrsnInfoList=" + rsplPrsnInfoList +
+				'}';
+	}
 }

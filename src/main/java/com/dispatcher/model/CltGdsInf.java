@@ -28,12 +28,22 @@ public class CltGdsInf {
     @JacksonXmlProperty(localName = "CltzEvltVal")
     private String cltzEvltVal;
 
+    @JacksonXmlProperty(localName = "CltzRvalVal")
+    private String cltzRvalVal;
+
+    public String getCltzRvalVal() {
+        return cltzRvalVal;
+    }
+
+    public void setCltzRvalVal(String cltzRvalVal) {
+        this.cltzRvalVal = cltzRvalVal;
+    }
+
     @JacksonXmlProperty(localName = "lglPsnNm")
     private String lglPsnNm;
 
     @JacksonXmlProperty(localName = "lglPsnIdentNo")
     private String lglPsnIdentNo;
-
 
     private List<AttrInf> AttrInfArray;
 
@@ -129,6 +139,7 @@ public class CltGdsInf {
                 ", cltAdr='" + cltAdr + '\'' +
                 ", valEvltMode='" + valEvltMode + '\'' +
                 ", cltzEvltVal='" + cltzEvltVal + '\'' +
+                ", cltzRvalVal='" + cltzRvalVal + '\'' +
                 ", lglPsnNm='" + lglPsnNm + '\'' +
                 ", lglPsnIdentNo='" + lglPsnIdentNo + '\'' +
                 ", AttrInfArray=" + AttrInfArray +

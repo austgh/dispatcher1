@@ -2,6 +2,9 @@ package com.dispatcher.model;
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
+/**
+ * @author think
+ */
 public class RsplPrsnInfo {
     private String rsplPrsnNm;
     private String rsplPrsnIdTyp;

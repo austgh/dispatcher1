@@ -107,11 +107,11 @@ public class FileUtils {
             e.printStackTrace();
         }
 //        return "ok";
-        try {
-            response.getWriter().print("<h1>download Over!</h1>");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            response.getWriter().print("<h1>download Over!</h1>");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
         return "ok";
     }
     public static String download(HttpServletResponse response,String filePath,String projectName) {
@@ -177,5 +177,20 @@ public class FileUtils {
         //设置压缩包的名字
         //解决不同浏览器压缩包名字含有中文时乱码的问题
         return downloadFile(response, dateStr, fileList,projectName);
+    }
+    public static String downloadLogs(HttpServletResponse response,String filePath,String projectName) {
+        Date date = new Date();
+        final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        final String dateStr = format.format(date);
+        File file0 = new File(filePath);
+        File[] tempFile = file0.listFiles();
+        ArrayList<FileBean> fileList = new ArrayList<>();
+        assert tempFile != null;
+        for (File value : tempFile) {
+            if(value.isFile()){
+                addFileToList(fileList, value,filePath);
+            }
+        }
+        return FileUtils.downloadFile(response, dateStr, fileList,projectName);
     }
 }
