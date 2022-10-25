@@ -83,7 +83,7 @@ public class SysHeadBody {
 
 	/**
 	 * 交易日期<br>
-	 * 请求方系统的日期 格式：YYYYMMDD 无掩码<br>
+	 * 请求方系统的日期 格式：yyyyMMdd 无掩码<br>
 	 * 交易返回时服务方填写本系统的日期
 	 */
 	@ParamsCheck(notNull = true)
@@ -92,7 +92,7 @@ public class SysHeadBody {
 
 	/**
 	 * 交易时间<br>
-	 * 请求方系统的时间 格式：HHMMSS 无掩码<br>
+	 * 请求方系统的时间 格式：h24miss 无掩码<br>
 	 * 交易返回时服务方填写本系统的时间
 	 */
 	@ParamsCheck(notNull = true)

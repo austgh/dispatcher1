@@ -71,7 +71,17 @@ public class UserController {
             }else if("12003000025".equals(serviceCode) && "05".equals(serviceScene)) {
                 Wepmf05ReqBody reqBody = getWepmf05ReqBody(body);
                 return dispatcher0(sysHeadBody, appHeadBody, reqBody);
+            }else if("000".equals(serviceCode) && "00".equals(serviceScene)){
+                WepmfHelpMe reqBody = getWepmfHelpMe(body);
+                return dispatcher1(sysHeadBody, appHeadBody, reqBody);
+            }else if("12002000004".equals(serviceCode) && "55".equals(serviceScene)){
+                Wepmf06ReqBody reqBody = getWepmf06ReqBody(body, sysHeadBody);
+                return dispatcher(sysHeadBody, appHeadBody, reqBody);
+            }else if("12003000002".equals(serviceCode) && "21".equals(serviceScene)){
+                Wepmf07ReqBody reqBody = getWepmf07ReqBody(body, sysHeadBody);
+                return dispatcher2(sysHeadBody, appHeadBody, reqBody);
             }
+
         } catch (DocumentException e) {
             e.printStackTrace();
         }
@@ -111,6 +121,7 @@ public class UserController {
         reqBody.setRsplPrsnInfoList(rsplPrsnInfos);
         reqBody.setPartBkCd(reqBody.getPartBkCd());
         reqBody.setZoneCd(reqBody.getPartBkCd());
+        reqBody.setUvslSocCrCd(reqBody.getUvslSocCrCd());
         return reqBody;
     }
 
@@ -156,7 +167,94 @@ public class UserController {
         System.out.println("请求报文:" + reqBody);
         return reqBody;
     }
+    private Wepmf06ReqBody getWepmf06ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
+        Wepmf06ReqBody reqBody = JSONObject.toJavaObject(body, Wepmf06ReqBody.class);
+        reqBody.setServiceId("AMNoTaxModel");
+        reqBody.setEntName(reqBody.getEntpNm());
+        reqBody.setEntpNm(reqBody.getEntpNm());
+        reqBody.setUvslSocCrCd(reqBody.getUvslSocCrCd());
+        reqBody.setCusMngr(reqBody.getCusMngr());
+        reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
+        System.out.println("请求报文:" + reqBody);
+        return reqBody;
+    }
+    private Wepmf07ReqBody getWepmf07ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
+        Wepmf07ReqBody reqBody = JSONObject.toJavaObject(body, Wepmf07ReqBody.class);
+        reqBody.setServiceId("queryAMNoTaxModel");
+        reqBody.setEntName(reqBody.getEntpNm());
+        reqBody.setEntpNm(reqBody.getEntpNm());
+        reqBody.setUvslSocCrCd(reqBody.getUvslSocCrCd());
+        reqBody.setCusMngr(reqBody.getCusMngr());
+        reqBody.setBgnDt(reqBody.getBgnDt());
+        reqBody.setEndDt(reqBody.getEndDt());
+        reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
+        System.out.println("请求报文:" + reqBody);
+        return reqBody;
+    }
+    private WepmfHelpMe getWepmfHelpMe(JSONObject body) {
+        WepmfHelpMe reqBody = JSONObject.toJavaObject(body, WepmfHelpMe.class);
+        reqBody.setServiceId("helpme");
+        System.out.println("请求报文:" + reqBody);
+        return reqBody;
+    }
+    /*
+    *
+     *
+     * @date 2022/9/1 15:31
+     * @param sysHeadBody
+     * @param appHeadBody
+     * @param object 
+     * @return java.lang.String
+     */
+    private String dispatcher2(SysHeadBody sysHeadBody, AppHeadBody appHeadBody,
+                               Object object) {
+        String result;
+        //2、创建jackson的核心对象 ObjectMapper
+        ObjectMapper mapper = new ObjectMapper();
+        CmpnModlRsltInfoResultBody resultBody = new CmpnModlRsltInfoResultBody();
+        try {
+            String request = mapper.writeValueAsString(object);
+            System.out.println(request);
+            String wsdlResult = (String) WsdlInvoke.invokeHost(request,
+                    WsdlInvoke.RESULT_TYPE_2);
+            System.out.println("wsdlResult---->:"+wsdlResult);
+            if (!CommUtils.isEmptyStr(wsdlResult)) {
+                JSONObject jsonObject1 = JSONObject.parseObject(wsdlResult);
+                final String rescode = jsonObject1.getString("rescode");
+                final String resmsg = jsonObject1.getString("resmsg");
+                final String rcrdCnt = jsonObject1.getString("totRcrdCnt");
 
+                List<CmpnModlRsltInfo> cmpnModlRsltInfos;
+                cmpnModlRsltInfos = JSONObject.parseArray(jsonObject1.getString("CmpnModlRsltInfo"), CmpnModlRsltInfo.class);
+                resultBody.setReplyCd(rescode);
+                resultBody.setReplyText(resmsg);
+                resultBody.setTotRcrdCnt(rcrdCnt);
+                resultBody.setCmpnModlRsltInfos(cmpnModlRsltInfos);
+
+                getResultInfos(sysHeadBody, rescode, resmsg);
+            } else {
+                resultBody.setReplyCd("999999");
+                resultBody.setReplyText("交易失败");
+                List<ResultInfo> resultInfos = new ArrayList<>();
+                ResultInfo resultInfo = new ResultInfo();
+                resultInfo.setReturnCode("999999");
+                resultInfo.setReturnMsg("交易失败");
+                resultInfos.add(resultInfo);
+                sysHeadBody.setResultInfos(resultInfos);
+                sysHeadBody.setReturnStatus("F");
+            }
+        } catch (JsonProcessingException e) {
+            resultBody.setReplyCd("999999");
+            resultBody.setReplyText("交易失败");
+        } finally {
+            EsbXmlBody reqXmlBo = new EsbXmlBody(sysHeadBody, appHeadBody, resultBody);
+            Document reqDoc = EsbXmlMapper.toXml(reqXmlBo);
+            result = reqDoc.asXML().replace("ResultInfos", "array").replace("ResultInfo", "Ret").replace("EntpInfos",
+                    "array").replace("CmpnModlRsltInfos","array");
+            System.out.println(result);
+        }
+        return result;
+    }
     private Wepmf01Body getWepmf01Body(JSONObject body, SysHeadBody sysHeadBody) {
         JSONObject array = body.getJSONObject("array");
         System.out.println(array.getString("RsplPrsnInfo"));
@@ -178,6 +276,7 @@ public class UserController {
         wepmf01Body.setUserid(sysHeadBody.getConsumerSeqNo());
         wepmf01Body.setPartBkCd(wepmf01Body.getPartBkCd());
         wepmf01Body.setZoneCd(wepmf01Body.getPartBkCd());
+        wepmf01Body.setUvslSocCrCd(wepmf01Body.getUvslSocCrCd());
         return wepmf01Body;
     }
 
@@ -222,7 +321,51 @@ public class UserController {
         }
         return result;
     }
-
+    private String dispatcher1(SysHeadBody sysHeadBody, AppHeadBody appHeadBody,
+                              Object object) {
+        String result;
+        //2、创建jackson的核心对象 ObjectMapper
+        ObjectMapper mapper = new ObjectMapper();
+        ResultBody1 resultBody = new ResultBody1();
+        try {
+            String request = mapper.writeValueAsString(object);
+            System.out.println(request);
+            String wsdlResult = (String) WsdlInvoke.invokeHost(request,
+                    WsdlInvoke.RESULT_TYPE_2);
+            System.out.println(wsdlResult);
+            if (!CommUtils.isEmptyStr(wsdlResult)) {
+                JSONObject jsonObject1 = JSONObject.parseObject(wsdlResult);
+                final String rescode = jsonObject1.getString("rescode");
+                final String resmsg = jsonObject1.getString("resmsg");
+                final String result1 = jsonObject1.getString("result");
+                if(!CommUtils.isEmptyStr(result1)){
+                    resultBody.setResult(result1);
+                }
+                resultBody.setReplyCd(rescode);
+                resultBody.setReplyText(resmsg);
+                getResultInfos(sysHeadBody, rescode, resmsg);
+            } else {
+                resultBody.setReplyCd("999999");
+                resultBody.setReplyText("交易失败");
+                List<ResultInfo> resultInfos = new ArrayList<>();
+                ResultInfo resultInfo = new ResultInfo();
+                resultInfo.setReturnCode("999999");
+                resultInfo.setReturnMsg("交易失败");
+                resultInfos.add(resultInfo);
+                sysHeadBody.setResultInfos(resultInfos);
+                sysHeadBody.setReturnStatus("F");
+            }
+        } catch (JsonProcessingException e) {
+            resultBody.setReplyCd("999999");
+            resultBody.setReplyText("交易失败");
+        } finally {
+            EsbXmlBody reqXmlBo = new EsbXmlBody(sysHeadBody, appHeadBody, resultBody);
+            Document reqDoc = EsbXmlMapper.toXml(reqXmlBo);
+            result = reqDoc.asXML().replace("ResultInfos", "array").replace("ResultInfo", "Ret");
+            System.out.println(result);
+        }
+        return result;
+    }
     private void getResultInfos(SysHeadBody sysHeadBody, String rescode, String resmsg) {
         List<ResultInfo> resultInfos = new ArrayList<>();
         ResultInfo resultInfo = new ResultInfo();
@@ -247,18 +390,18 @@ public class UserController {
             System.out.println("wsdlResult---->:"+wsdlResult);
             if (!CommUtils.isEmptyStr(wsdlResult)) {
                 JSONObject jsonObject1 = JSONObject.parseObject(wsdlResult);
-                final String resode = jsonObject1.getString("resode");
+                final String rescode = jsonObject1.getString("rescode");
                 final String resmsg = jsonObject1.getString("resmsg");
                 final String rcrdCnt = jsonObject1.getString("totRcrdCnt");
 
                 List<EntpInf> entpInfos;
                 entpInfos = JSONObject.parseArray(jsonObject1.getString("EntpInf"), EntpInf.class);
-                resultBody.setReplyCd(resode);
+                resultBody.setReplyCd(rescode);
                 resultBody.setReplyText(resmsg);
                 resultBody.setRcrdCnt(rcrdCnt);
                 resultBody.setEntpInfos(entpInfos);
 
-                getResultInfos(sysHeadBody, resode, resmsg);
+                getResultInfos(sysHeadBody, rescode, resmsg);
             } else {
                 resultBody.setReplyCd("999999");
                 resultBody.setReplyText("交易失败");
