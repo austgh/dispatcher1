@@ -10,6 +10,8 @@ import com.dispatcher.xml.XMLUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.dom4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -27,20 +29,21 @@ public class UserController {
     @ResponseBody
     public String hello(HttpServletRequest request) {
         String username = request.getParameter("username");
-        System.out.println("-------" + username);
+        log.info("-------" + username);
         return "hello";
     }
 
+    private final Logger log = LoggerFactory.getLogger(UserController.class);
     @RequestMapping(value = "/mortgage-info", method = RequestMethod.POST, consumes = "application/xml", produces =
             "application/json")
     @ResponseBody
     public String mortgage(@RequestBody String message) {
         try {
-            System.out.println("接受的请求报文:"+message);
+            log.info("接受的请求报文:{}",message);
             Document doc = DocumentHelper.parseText(message);
             JSONObject json = new JSONObject();
             dom4j2Json(doc.getRootElement(), json);
-            System.out.println("xml2Json:" + json);
+            log.info("xml2Json:{}",json);
 
             JSONObject sysHead = json.getJSONObject("SYS_HEAD");
             JSONObject body = json.getJSONObject("BODY");
@@ -49,10 +52,10 @@ public class UserController {
             String serviceScene = sysHead.getString("ServiceScene");
 
             SysHeadBody sysHeadBody = JSONObject.toJavaObject(sysHead, SysHeadBody.class);
-            System.out.println(sysHeadBody);
+            log.info(String.valueOf(sysHeadBody));
 
             AppHeadBody appHeadBody = JSONObject.toJavaObject(appHead, AppHeadBody.class);
-            System.out.println(appHeadBody);
+            log.info(String.valueOf(appHeadBody));
             //根据 esb的服务码和场景号来调用不同的服务
             if ("02002000039".equals(serviceCode) && "01".equals(serviceScene)) {
                 //责任人校验
@@ -80,6 +83,9 @@ public class UserController {
             }else if("12003000002".equals(serviceCode) && "21".equals(serviceScene)){
                 Wepmf07ReqBody reqBody = getWepmf07ReqBody(body, sysHeadBody);
                 return dispatcher2(sysHeadBody, appHeadBody, reqBody);
+            }else if("13003000001".equals(serviceCode) && "34".equals(serviceScene)){
+                Wepmf08ReqBody reqBody = getWepmf08ReqBody(body, sysHeadBody);
+                return dispatcher3(sysHeadBody, appHeadBody, reqBody);
             }
 
         } catch (DocumentException e) {
@@ -150,7 +156,7 @@ public class UserController {
         reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
         reqBody.setPartBkCd(reqBody.getPartBkCd());
         reqBody.setZoneCd(reqBody.getZoneCd());
-        System.out.println("请求报文:" + reqBody);
+        log.info("请求报文:{}",reqBody);
         return reqBody;
     }
     private Wepmf03ReqBody getWepmf03ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
@@ -158,13 +164,13 @@ public class UserController {
         reqBody.setServiceId("CEDApproveModel");
         reqBody.setEntname(reqBody.getEntpNm());
         reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
-        System.out.println("请求报文:" + reqBody);
+        log.info("请求报文:{}",reqBody);
         return reqBody;
     }
     private Wepmf05ReqBody getWepmf05ReqBody(JSONObject body) {
         Wepmf05ReqBody reqBody = JSONObject.toJavaObject(body, Wepmf05ReqBody.class);
         reqBody.setServiceId("queryEntRelationship");
-        System.out.println("请求报文:" + reqBody);
+        log.info("请求报文:{}",reqBody);
         return reqBody;
     }
     private Wepmf06ReqBody getWepmf06ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
@@ -175,7 +181,7 @@ public class UserController {
         reqBody.setUvslSocCrCd(reqBody.getUvslSocCrCd());
         reqBody.setCusMngr(reqBody.getCusMngr());
         reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
-        System.out.println("请求报文:" + reqBody);
+        log.info("请求报文:{}",reqBody);
         return reqBody;
     }
     private Wepmf07ReqBody getWepmf07ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
@@ -188,13 +194,26 @@ public class UserController {
         reqBody.setBgnDt(reqBody.getBgnDt());
         reqBody.setEndDt(reqBody.getEndDt());
         reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
-        System.out.println("请求报文:" + reqBody);
+        log.info("请求报文:{}",reqBody);
+        return reqBody;
+    }
+    private Wepmf08ReqBody getWepmf08ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
+        Wepmf08ReqBody reqBody = new Wepmf08ReqBody();
+        if(body!=null){
+            reqBody = JSONObject.toJavaObject(body, Wepmf08ReqBody.class);
+        }
+        reqBody.setServiceId("QueryTechNameService");
+        reqBody.setEntName(reqBody.getEntpNm());
+        reqBody.setEntpNm(reqBody.getEntpNm());
+        reqBody.setUvslSocCrCd(reqBody.getUvslSocCrCd());
+        reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
+        log.info("请求报文:" + reqBody);
         return reqBody;
     }
     private WepmfHelpMe getWepmfHelpMe(JSONObject body) {
         WepmfHelpMe reqBody = JSONObject.toJavaObject(body, WepmfHelpMe.class);
         reqBody.setServiceId("helpme");
-        System.out.println("请求报文:" + reqBody);
+        log.info("请求报文:{}",reqBody);
         return reqBody;
     }
     /*
@@ -214,10 +233,10 @@ public class UserController {
         CmpnModlRsltInfoResultBody resultBody = new CmpnModlRsltInfoResultBody();
         try {
             String request = mapper.writeValueAsString(object);
-            System.out.println(request);
+            log.info(request);
             String wsdlResult = (String) WsdlInvoke.invokeHost(request,
                     WsdlInvoke.RESULT_TYPE_2);
-            System.out.println("wsdlResult---->:"+wsdlResult);
+            log.info("wsdlResult---->:{}",wsdlResult);
             if (!CommUtils.isEmptyStr(wsdlResult)) {
                 JSONObject jsonObject1 = JSONObject.parseObject(wsdlResult);
                 final String rescode = jsonObject1.getString("rescode");
@@ -251,13 +270,68 @@ public class UserController {
             Document reqDoc = EsbXmlMapper.toXml(reqXmlBo);
             result = reqDoc.asXML().replace("ResultInfos", "array").replace("ResultInfo", "Ret").replace("EntpInfos",
                     "array").replace("CmpnModlRsltInfos","array");
-            System.out.println(result);
+            log.info(result);
+        }
+        return result;
+    }
+    /*
+    *
+     * 返回WEPMF08的結果
+     * @date 2023/2/17 14:56
+     * @param sysHeadBody
+     * @param appHeadBody
+     * @param object
+     * @return java.lang.String
+     */
+    private String dispatcher3(SysHeadBody sysHeadBody, AppHeadBody appHeadBody,
+                               Object object) {
+        String result;
+        //2、创建jackson的核心对象 ObjectMapper
+        ObjectMapper mapper = new ObjectMapper();
+        TechNameModlResultBody resultBody = new TechNameModlResultBody();
+        try {
+            String request = mapper.writeValueAsString(object);
+            log.info(request);
+            String wsdlResult = (String) WsdlInvoke.invokeHost(request,
+                    WsdlInvoke.RESULT_TYPE_2);
+            log.info("wsdlResult---->:{}",wsdlResult);
+            if (!CommUtils.isEmptyStr(wsdlResult)) {
+                JSONObject jsonObject1 = JSONObject.parseObject(wsdlResult);
+                final String rescode = jsonObject1.getString("rescode");
+                final String resmsg = jsonObject1.getString("resmsg");
+                final String techCmpFlg = jsonObject1.getString("techCmpFlg");
+
+                resultBody.setReplyCd(rescode);
+                resultBody.setReplyText(resmsg);
+                resultBody.setTechCmpFlg(techCmpFlg);
+
+                getResultInfos(sysHeadBody, rescode, resmsg);
+            } else {
+                resultBody.setReplyCd("999999");
+                resultBody.setReplyText("交易失败");
+                List<ResultInfo> resultInfos = new ArrayList<>();
+                ResultInfo resultInfo = new ResultInfo();
+                resultInfo.setReturnCode("999999");
+                resultInfo.setReturnMsg("交易失败");
+                resultInfos.add(resultInfo);
+                sysHeadBody.setResultInfos(resultInfos);
+                sysHeadBody.setReturnStatus("F");
+            }
+        } catch (JsonProcessingException e) {
+            resultBody.setReplyCd("999999");
+            resultBody.setReplyText("交易失败");
+        } finally {
+            EsbXmlBody reqXmlBo = new EsbXmlBody(sysHeadBody, appHeadBody, resultBody);
+            Document reqDoc = EsbXmlMapper.toXml(reqXmlBo);
+            result = reqDoc.asXML().replace("ResultInfos", "array").replace("ResultInfo", "Ret").replace("EntpInfos",
+                    "array");
+            log.info(result);
         }
         return result;
     }
     private Wepmf01Body getWepmf01Body(JSONObject body, SysHeadBody sysHeadBody) {
         JSONObject array = body.getJSONObject("array");
-        System.out.println(array.getString("RsplPrsnInfo"));
+        log.info(array.getString("RsplPrsnInfo"));
         Object info = array.get("RsplPrsnInfo");
         List<RsplPrsnInfo> rsplPrsnInfos = new ArrayList<>();
         if (info instanceof JSONObject) {
@@ -268,7 +342,7 @@ public class UserController {
         }
         Wepmf01Body wepmf01Body = JSONObject.toJavaObject(body, Wepmf01Body.class);
         wepmf01Body.setRsplPrsnInfoList(rsplPrsnInfos);
-        System.out.println(wepmf01Body);
+        log.info(String.valueOf(wepmf01Body));
         wepmf01Body.setServiceId("Wepmf01Model");
         wepmf01Body.setEntname(wepmf01Body.getEntpNm());
         wepmf01Body.setLegalname(wepmf01Body.getLglPsnNm());
@@ -288,10 +362,10 @@ public class UserController {
         ResultBody resultBody = new ResultBody();
         try {
             String request = mapper.writeValueAsString(object);
-            System.out.println(request);
+            log.info(request);
             String wsdlResult = (String) WsdlInvoke.invokeHost(request,
                     WsdlInvoke.RESULT_TYPE_2);
-            System.out.println(wsdlResult);
+            log.info(wsdlResult);
             if (!CommUtils.isEmptyStr(wsdlResult)) {
                 JSONObject jsonObject1 = JSONObject.parseObject(wsdlResult);
                 final String rescode = jsonObject1.getString("rescode");
@@ -317,7 +391,7 @@ public class UserController {
             EsbXmlBody reqXmlBo = new EsbXmlBody(sysHeadBody, appHeadBody, resultBody);
             Document reqDoc = EsbXmlMapper.toXml(reqXmlBo);
             result = reqDoc.asXML().replace("ResultInfos", "array").replace("ResultInfo", "Ret");
-            System.out.println(result);
+            log.info(result);
         }
         return result;
     }
@@ -329,10 +403,10 @@ public class UserController {
         ResultBody1 resultBody = new ResultBody1();
         try {
             String request = mapper.writeValueAsString(object);
-            System.out.println(request);
+            log.info(request);
             String wsdlResult = (String) WsdlInvoke.invokeHost(request,
                     WsdlInvoke.RESULT_TYPE_2);
-            System.out.println(wsdlResult);
+            log.info(wsdlResult);
             if (!CommUtils.isEmptyStr(wsdlResult)) {
                 JSONObject jsonObject1 = JSONObject.parseObject(wsdlResult);
                 final String rescode = jsonObject1.getString("rescode");
@@ -362,7 +436,7 @@ public class UserController {
             EsbXmlBody reqXmlBo = new EsbXmlBody(sysHeadBody, appHeadBody, resultBody);
             Document reqDoc = EsbXmlMapper.toXml(reqXmlBo);
             result = reqDoc.asXML().replace("ResultInfos", "array").replace("ResultInfo", "Ret");
-            System.out.println(result);
+            log.info(result);
         }
         return result;
     }
@@ -384,10 +458,10 @@ public class UserController {
         EntpInfoResultBody resultBody = new EntpInfoResultBody();
         try {
             String request = mapper.writeValueAsString(object);
-            System.out.println(request);
+            log.info(request);
             String wsdlResult = (String) WsdlInvoke.invokeHost(request,
                     WsdlInvoke.RESULT_TYPE_2);
-            System.out.println("wsdlResult---->:"+wsdlResult);
+            log.info("wsdlResult---->:{}",wsdlResult);
             if (!CommUtils.isEmptyStr(wsdlResult)) {
                 JSONObject jsonObject1 = JSONObject.parseObject(wsdlResult);
                 final String rescode = jsonObject1.getString("rescode");
@@ -421,14 +495,14 @@ public class UserController {
             Document reqDoc = EsbXmlMapper.toXml(reqXmlBo);
             result = reqDoc.asXML().replace("ResultInfos", "array").replace("ResultInfo", "Ret").replace("EntpInfos",
                     "array");
-            System.out.println(result);
+            log.info(result);
         }
         return result;
     }
     @RequestMapping(value = "/post-info", method = RequestMethod.POST, consumes = "application/xml")
     public void postTest(@RequestBody Teacher teacher) {
-        System.out.println("postman传过来的xml信息转换成实体类如下：==========");
-        System.out.println(teacher.toString());
+        log.info("postman传过来的xml信息转换成实体类如下：==========");
+        log.info(teacher.toString());
     }
 
     /**
@@ -497,9 +571,9 @@ public class UserController {
     @RequestMapping(value = "/20", method = RequestMethod.POST, consumes = "application/xml", produces = "application" +
             "/json")
     public String toObject(@RequestBody String message) {
-        System.out.println("接受到的消息:" + message);
+        log.info("接受到的消息:{}",message);
         Object o = XMLUtil.convertXmlStrToObject(EsbXmlWepmf01Body.class, message);
-        System.out.println(o);
+        log.info((String) o);
         return "hello";
     }
 
@@ -527,7 +601,7 @@ public class UserController {
                 resolveCltGdsJSONObject(cltGdsInfs, cltGdsInfArray.getJSONObject(i));
             }
         }
-        System.out.println("-------------------------" + cltGdsInfs);
+        log.info("-------------------------:{}",cltGdsInfs);
     }
 
     /**
