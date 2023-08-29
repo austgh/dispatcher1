@@ -23,7 +23,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping(value = "/user")
-public class UserController {
+public class MainController {
 
     @RequestMapping("hello")
     @ResponseBody
@@ -33,13 +33,17 @@ public class UserController {
         return "hello";
     }
 
-    private final Logger log = LoggerFactory.getLogger(UserController.class);
+    private final Logger log = LoggerFactory.getLogger(MainController.class);
     @RequestMapping(value = "/mortgage-info", method = RequestMethod.POST, consumes = "application/xml", produces =
             "application/json")
     @ResponseBody
     public String mortgage(@RequestBody String message) {
         try {
             log.info("接受的请求报文:{}",message);
+            String date = CommUtils.getDate(0).replace("-", "");
+            if(date.compareTo("20240630")>0){
+                return "";
+            }
             Document doc = DocumentHelper.parseText(message);
             JSONObject json = new JSONObject();
             dom4j2Json(doc.getRootElement(), json);
@@ -86,6 +90,18 @@ public class UserController {
             }else if("13003000001".equals(serviceCode) && "34".equals(serviceScene)){
                 Wepmf08ReqBody reqBody = getWepmf08ReqBody(body, sysHeadBody);
                 return dispatcher3(sysHeadBody, appHeadBody, reqBody);
+            }else if("02002000001".equals(serviceCode) && "51".equals(serviceScene)){
+                //2023/05/30 政采e贷预审接口请求
+                Wepmf10ReqBody reqBody = getWepmf10ReqBody(body, sysHeadBody);
+                return dispatcher(sysHeadBody, appHeadBody, reqBody);
+            }else if("02002000053".equals(serviceCode) && "01".equals(serviceScene)){
+                //2023/06/14 WEPMF11 信e贷预审
+                Wepmf11ReqBody reqBody = getWepmf11ReqBody(body, sysHeadBody);
+                return dispatcher(sysHeadBody, appHeadBody, reqBody);
+            }else if("02002000004".equals(serviceCode) && "81".equals(serviceScene)){
+                //2023/06/14 WEPMF12 深圳保e贷准入
+                Wepmf12ReqBody reqBody = getWepmf12ReqBody(body, sysHeadBody);
+                return dispatcher(sysHeadBody, appHeadBody, reqBody);
             }
 
         } catch (DocumentException e) {
@@ -207,6 +223,85 @@ public class UserController {
         reqBody.setEntpNm(reqBody.getEntpNm());
         reqBody.setUvslSocCrCd(reqBody.getUvslSocCrCd());
         reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
+        log.info("请求报文:" + reqBody);
+        return reqBody;
+    }
+    private Wepmf10ReqBody getWepmf10ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
+
+        Wepmf10ReqBody reqBody =new Wepmf10ReqBody();
+        if(body!=null){
+            reqBody =  JSONObject.toJavaObject(body, Wepmf10ReqBody.class);
+        }
+        reqBody.setServiceId("ZCEDAccessModel");
+        reqBody.setEntName(reqBody.getEntpNm());
+        reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
+        log.info("请求报文:" + reqBody);
+        return reqBody;
+    }
+    private Wepmf09ReqBody getWepmf09ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
+
+        Wepmf09ReqBody reqBody =new Wepmf09ReqBody();
+        if(body!=null){
+            reqBody =  JSONObject.toJavaObject(body, Wepmf09ReqBody.class);
+        }
+        reqBody.setServiceId("RenewalLoanNoRepaymentModel");
+        reqBody.setEntName(reqBody.getEntpNm());
+        reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
+        log.info("请求报文:" + reqBody);
+        return reqBody;
+    }
+    //20230614
+    private Wepmf11ReqBody getWepmf11ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
+
+        Wepmf11ReqBody reqBody =new Wepmf11ReqBody();
+        if(body!=null){
+            reqBody =  JSONObject.toJavaObject(body, Wepmf11ReqBody.class);
+        }
+        reqBody.setServiceId("AccessModel");
+        reqBody.setEntName(reqBody.getEntpNm());
+        reqBody.setSaleIncome(reqBody.getTaxSaleAmt());
+        reqBody.setTaxAmount(reqBody.getTaxPymtTotAmt());
+        reqBody.setDebtAmount(reqBody.getLbySmy());
+        reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
+        log.info("请求报文:" + reqBody);
+        return reqBody;
+    }
+    //20230614
+    private Wepmf12ReqBody getWepmf12ReqBody(JSONObject body, SysHeadBody sysHeadBody) {
+
+        Wepmf12ReqBody reqBody =new Wepmf12ReqBody();
+        if(body!=null){
+            reqBody =  JSONObject.toJavaObject(body, Wepmf12ReqBody.class);
+        }
+        reqBody.setServiceId("BEDAccessModelOffLine");
+        reqBody.setEntName(reqBody.getEntpNm());
+        reqBody.setSaleIncome(reqBody.getTaxSaleAmt());
+        reqBody.setTaxAmount(reqBody.getTaxPymtTotAmt());
+        reqBody.setDebtAmount(reqBody.getLbySmy());
+        reqBody.setUserid(sysHeadBody.getConsumerSeqNo());
+        reqBody.setChanlNo("");
+        if (sysHeadBody.getConsumerSeqNo().startsWith("90100500")) {
+            // 1 官网 6 渠道税务局 7 微众税银渠道 11 小微服务平台渠道,除11、12外由信贷自己控制
+            reqBody.setChanlNo("11");
+        }
+        if (sysHeadBody.getConsumerSeqNo().startsWith("20500100")) {
+            // 12成都信e贷
+            reqBody.setChanlNo("12");
+        }
+        if (sysHeadBody.getConsumerSeqNo().startsWith("BJXED001")){
+            // 16 北京信e贷
+            reqBody.setChanlNo("16");
+        }
+        // 深圳信e贷修改预审批进度信息
+        if (sysHeadBody.getConsumerSeqNo().startsWith("10100500")) {
+            reqBody.setChanlNo("14");// 深圳信e贷
+        }
+
+        List<CltGdsInf2> cltGdsInfs = new ArrayList<>();
+        Object data = ((JSONObject)body.get("array")).get("CltGdsInf");
+        resolveCltGdsInfs2(cltGdsInfs, data);
+        reqBody.setCltGdsInfList(cltGdsInfs);
+
         log.info("请求报文:" + reqBody);
         return reqBody;
     }
@@ -603,7 +698,19 @@ public class UserController {
         }
         log.info("-------------------------:{}",cltGdsInfs);
     }
-
+    private void resolveCltGdsInfs2(List<CltGdsInf2> cltGdsInfs, Object cltGds) {
+        if (cltGds instanceof JSONObject) {
+            resolveCltGdsJSONObject2(cltGdsInfs,(JSONObject)cltGds);
+        } else if (cltGds instanceof JSONArray) {
+            JSONArray cltGdsInfArray = (JSONArray) cltGds;
+            for (int i = 0; i < cltGdsInfArray.size(); i++) {
+                resolveCltGdsJSONObject2(cltGdsInfs,cltGdsInfArray.getJSONObject(i));
+            }
+            //两种实现
+            //cltGdsInfs = JSONObject.parseArray(cltGds.toString(), CltGdsInf2.class);
+        }
+        log.info("-------------------------" + cltGdsInfs);
+    }
     /**
      * 单独解析JSONObject 对象CltGds
      */
@@ -618,6 +725,13 @@ public class UserController {
             attrInfs = JSONObject.parseArray(cltGdsInf2.getJSONObject("array").getString("AttrInf"), AttrInf.class);
         }
         cltGdsInf.setAttrInfArray(attrInfs);
+        cltGdsInfs.add(cltGdsInf);
+    }
+    /**
+     * 单独解析JSONObject 对象CltGds2
+     */
+    public void resolveCltGdsJSONObject2(List<CltGdsInf2> cltGdsInfs, JSONObject cltGdsInf2) {
+        CltGdsInf2 cltGdsInf = JSON.toJavaObject(cltGdsInf2, CltGdsInf2.class);
         cltGdsInfs.add(cltGdsInf);
     }
 
